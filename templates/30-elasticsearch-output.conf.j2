@@ -2,5 +2,7 @@ output {
   elasticsearch {
     hosts => {{ logstash_elasticsearch_hosts | to_json }}
     index => "%{[@metadata][beat]}-%{+YYYY.MM.dd}"
+    user => {{ logstash_elasticsearch_user }}
+    password => {{ logstash_elasticsearch_password }}
   }
 }
