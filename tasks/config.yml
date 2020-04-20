@@ -42,3 +42,16 @@
     state: absent
   when: not logstash_monitor_local_syslog
   notify: restart logstash
+
+- name: Change logstash dirs permissions.
+  file:
+    path: "{{ item }}"
+    owner: logstash
+    group: logstash
+    state: directory
+    recurse: yes
+  with_items:
+    - "/usr/share/logstash"
+    - "/var/log/logstash/"
+    - "/var/lib/logstash/"
+  notify: restart logstash
