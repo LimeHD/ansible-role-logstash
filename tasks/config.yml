@@ -20,7 +20,7 @@
     mode: 0644
   with_items:
     - 10-syslog.conf
-    - 11-nginx.conf
+    - 12-receiver_access.conf
   notify: restart logstash
 
 - name: Create Logstash configuration file for local syslog.
