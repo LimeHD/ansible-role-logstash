@@ -12,7 +12,7 @@
   notify: restart logstash
 
 - name: Create Logstash filters.
-  copy:
+  template:
     src: "../../../files/logstash/filters/{{ item }}"
     dest: "/etc/logstash/conf.d/{{ item }}"
     owner: root
