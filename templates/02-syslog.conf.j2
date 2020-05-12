@@ -1,0 +1,78 @@
+input {
+        udp {
+                type => "syslog"
+                port => "1514"
+        }
+}
+
+filter {
+        if [type] == "syslog" {
+                dns {
+                        reverse => [ "host" ]
+                        action => "replace"
+                }
+                mutate {
+                        add_tag => [ "syslog" ]
+                }
+        }
+}
+
+filter {
+        if "syslog" in [tags] {
+                grok {
+                        match => { "message" => "<%{POSINT:syslog_pri}>%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:\[%{POSINT:syslog_pid}\])?: %{GREEDYDATA:syslog_message}" }
+                        add_field => [ "received_at", "%{@timestamp}" ]
+                        add_field => [ "received_from", "%{host}" ]
+                }
+                syslog_pri { }
+                date {
+                        match => [ "syslog_timestamp", "MMM d HH:mm:ss", "MMM dd HH:mm:ss" ]
+                }
+                if !("_grokparsefailure" in [tags]) {
+                        mutate {
+                                replace => [ "host", "%{syslog_hostname}" ]
+                                replace => [ "@source_host", "%{syslog_hostname}" ]
+                                replace => [ "@message", "%{syslog_message}" ]
+                        }
+                }
+                if [syslog_hostname] =~ /.*?(nsvpx).*?(everythingshouldbevirtual.local)?/ {
+                        mutate {
+                                add_tag => [ "Netscaler" ]
+                        }
+                }
+                if [syslog_hostname] =~ /.*?(pfsense).*?(everythingshouldbevirtual.local)?/ {
+                        mutate {
+                                add_tag => [ "PFSense" ]
+                        }
+                }
+        }
+}
+
+filter {
+        if "syslog" in [tags] {
+                if [syslog_program] == "sshd" {
+                        if "Failed password" in [message] {
+                                grok {
+                                        break_on_match => false
+                                        match => [
+                                                "message", "invalid user %{DATA:UserName} from %{IP:src_ip}",
+                                                "message", "for %{DATA:UserName} from %{IP:src_ip}"
+                                        ]
+                                }
+                                mutate {
+                                        add_tag => [ "SSH_Failed_Login" ]
+                                }
+                        }
+                        if "Accepted password" in [message] {
+                                grok {
+                                        match => [
+                                                "message", "for %{DATA:UserName} from %{IP:src_ip}"
+                                        ]
+                                }
+                                mutate {
+                                        add_tag => [ "SSH_Successful_Login" ]
+                                }
+                        }
+                }
+        }
+}

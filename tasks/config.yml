@@ -19,6 +19,7 @@
     group: root
     mode: 0644
   with_items:
+    - 02-syslog.conf
     - 12-receiver_access.conf
   notify: restart logstash
 
