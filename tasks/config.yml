@@ -21,6 +21,7 @@
   with_items:
     - 02-syslog.conf
     - 03-app.conf
+    - 04-nginx.conf
     - 12-receiver_access.conf
   notify: restart logstash
 
